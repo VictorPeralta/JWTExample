@@ -28,19 +28,14 @@ namespace JWTExample.Controllers
         }
 
         // GET: api/Account
-        [Authorize]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         [HttpGet]
-        public IEnumerable<IdentityUser> Get()
+        public async Task<IdentityUser> Get()
         {
-            return _userManager.Users;
+            var user = await _userManager.FindByIdAsync(User.FindFirst(ClaimTypes.Name).Value);
+            return user;
         }
 
-        // GET: api/Account/5
-        [HttpGet("{username}")]
-        public async Task<IdentityUser> Get(string username)
-        {
-            return await _userManager.FindByNameAsync(username);
-        }
 
         // POST: api/Account
         [HttpPost("login")]
@@ -74,17 +69,11 @@ namespace JWTExample.Controllers
         }
 
         [HttpPost("register")]
-        public async Task Register([FromBody] LoginViewModel loginViewModel)
+        public async Task<IActionResult> Register([FromBody] LoginViewModel loginViewModel)
         {
             IdentityUser user = new IdentityUser(loginViewModel.Username);
             var result = await _userManager.CreateAsync(user, loginViewModel.Password);
-        }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        [HttpGet("userinfo")]
-        public string GetCurrentUser()
-        {
-            return User.Identity.Name;
+            return await Authenticate(loginViewModel);
         }
     }
 }
